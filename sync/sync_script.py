@@ -13,12 +13,14 @@ class SyncDatabase():
 
         self.conn_outline = self.create_conn(setting=MYSQL_CONFIG_OUTLINE)
         self.conn_online = self.create_conn(setting=MYSQL_CONFIG_ONLINE)
-        self.tag_time = "2017-3-13 15:00:00"
+        self.tag_time = "2016-3-10 15:00:00"
         self.collect_ids = set()
 
         # 数据分组插入，分组数
+        self.data = []
         self.data_division_num = data_division_num
         self.data_division = []
+
 
         # 装载ids
         sql = "select id from spiderdb"
@@ -26,6 +28,9 @@ class SyncDatabase():
         if ids:
             for item in ids:
                 self.collect_ids.add(item)
+
+    def length(self):
+        return len(self.data)
 
     def create_conn(self, setting):
         conn = pymysql.Connect(**setting)
@@ -52,10 +57,9 @@ class SyncDatabase():
 
         # 对data进行分组
         if data:
-            data = list(data)
-            data_num = len(data)
-            for i in range(data_num):
-                self.data_division.append(data.pop())
+            self.data.extend(list(data))
+            for i in range(self.length()):
+                self.data_division.append(self.data.pop())
                 if len(self.data_division) >= self.data_division_num:
                     insert_sql = self.format_insert_sql(self.data_division)
                     self.insert(insert_sql)
@@ -92,5 +96,3 @@ class SyncDatabase():
 
     def format_str(self, str):
         return "\'" + str + "\'"
-
-
