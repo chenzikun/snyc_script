@@ -1,4 +1,5 @@
 from datetime import datetime
+from collections import deque
 from time import sleep
 
 import pymysql
@@ -17,22 +18,22 @@ class SyncDatabase():
         self.collect_urls = set()
 
         # 数据分组插入，分组数
-        self.data = []
+        self.data = deque()
         self.data_division_num = data_division_num
         self.data_division = []
 
-    def load_urls(self):
-        # 装载ids
+        # 装载urls
         sql = "select url from spiderdb"
         urls = self.query(sql, self.conn_online)
         if urls:
             for item in urls:
-                self.collect_urls.add(item)
+                self.collect_urls.add(item[0])
 
     def length(self):
         return len(self.data)
 
-    def create_conn(self, setting):
+    @staticmethod
+    def create_conn(setting):
         conn = pymysql.Connect(**setting)
         return conn
 
@@ -49,24 +50,24 @@ class SyncDatabase():
                 cursor.execute(sql)
             self.conn_online.commit()
         except Exception as e:
+            print('数据插入错误')
             print(e)
 
     def process_flow(self, tag_time):
-        self.load_urls()
         # data太长，需要分割
         query_sql = """select * from spiderdb where collect_time > \'{tag_time}\' """.format(tag_time=tag_time)
-        data = self.query(query_sql, self.conn_outline)
+        query_data = self.query(query_sql, self.conn_outline)
 
         # 对data进行分组
-        if data:
-            self.data.extend(list(data))
+        if query_data:
+            self.data.extend(deque(query_data))
             for i in range(self.length()):
-                self.data_division.append(self.data.pop())
+                self.data_division.append(self.data.popleft())
                 if len(self.data_division) >= self.data_division_num:
                     insert_sql = self.format_insert_sql(self.data_division)
-                    self.insert(insert_sql)
-                    self.data_division = []
-
+                    if insert_sql:
+                        self.insert(insert_sql)
+                        self.data_division = []
 
     def format_insert_sql(self, data):
         # 解析列表，替换值None和''为''Null, 字符串加上''
@@ -75,8 +76,10 @@ class SyncDatabase():
             sub_data_target = []
             if isinstance(item, tuple) and item[8] in self.collect_urls:
                 continue
+            else:
+                self.collect_urls.add(item[8])
             # 格式化字段值
-            for item_value in item:
+            for item_value in item[1:]:
                 if item_value is None or '':
                     item_value = 'NULL'
                 elif isinstance(item_value, str):
@@ -87,9 +90,13 @@ class SyncDatabase():
                     item_value = str(item_value)
                 sub_data_target.append(item_value)
             data_target.append(','.join(sub_data_target))
+
+        if data_target == []:
+            return None
+
         values = '), ('.join(data_target)
 
-        insert_sql = """insert into spiderdb (id, source, citycode, type, create_time, title, contact, tel, url,
+        insert_sql = """insert into spiderdb (source, citycode, type, create_time, title, contact, tel, url,
                       rent, rent_unit, area, district, business_center, address, neighborhood, industry_type, industry,
                       detail, img, engaged, minus_rent, shop_state, shop_name, suit, cost, cost_unit,
                       sub_area, collect_time) values ( {values} )
