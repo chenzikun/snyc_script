@@ -14,20 +14,20 @@ class SyncDatabase():
         self.conn_outline = self.create_conn(setting=MYSQL_CONFIG_OUTLINE)
         self.conn_online = self.create_conn(setting=MYSQL_CONFIG_ONLINE)
         self.tag_time = "2016-3-10 15:00:00"
-        self.collect_ids = set()
+        self.collect_urls = set()
 
         # 数据分组插入，分组数
         self.data = []
         self.data_division_num = data_division_num
         self.data_division = []
 
-
+    def load_urls(self):
         # 装载ids
-        sql = "select id from spiderdb"
-        ids = self.query(sql, self.conn_online)
-        if ids:
-            for item in ids:
-                self.collect_ids.add(item)
+        sql = "select url from spiderdb"
+        urls = self.query(sql, self.conn_online)
+        if urls:
+            for item in urls:
+                self.collect_urls.add(item)
 
     def length(self):
         return len(self.data)
@@ -43,7 +43,7 @@ class SyncDatabase():
         return result
 
     def insert(self, sql):
-        sleep(1)
+        sleep(0.5)
         try:
             with self.conn_online.cursor() as cursor:
                 cursor.execute(sql)
@@ -52,6 +52,7 @@ class SyncDatabase():
             print(e)
 
     def process_flow(self, tag_time):
+        self.load_urls()
         # data太长，需要分割
         query_sql = """select * from spiderdb where collect_time > \'{tag_time}\' """.format(tag_time=tag_time)
         data = self.query(query_sql, self.conn_outline)
@@ -72,7 +73,7 @@ class SyncDatabase():
         data_target = []
         for item in data:
             sub_data_target = []
-            if isinstance(item, tuple) and item[0] in self.collect_ids:
+            if isinstance(item, tuple) and item[8] in self.collect_urls:
                 continue
             # 格式化字段值
             for item_value in item:
