@@ -43,6 +43,7 @@ class SyncDatabase():
         return result
 
     def insert(self, sql):
+        sleep(1)
         try:
             with self.conn_online.cursor() as cursor:
                 cursor.execute(sql)
@@ -64,7 +65,7 @@ class SyncDatabase():
                     insert_sql = self.format_insert_sql(self.data_division)
                     self.insert(insert_sql)
                     self.data_division = []
-                    sleep(1)
+
 
     def format_insert_sql(self, data):
         # 解析列表，替换值None和''为''Null, 字符串加上''

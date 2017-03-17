@@ -17,7 +17,7 @@ if __name__ == '__main__':
         # print((datetime.now() - one_day).strftime("%Y-%m-%d %H:%M:%S"))
         sync.tag_time = (datetime.now() - one_day).strftime("%Y-%m-%d %H:%M:%S")
     scheduler = BlockingScheduler()
-    scheduler.add_job(main, 'interval', minutes=2)
+    scheduler.add_job(main, 'cron', minute='*/2', hour='7-23', day='*')
     try:
         print("开始计划任务", now())
         scheduler.start()
