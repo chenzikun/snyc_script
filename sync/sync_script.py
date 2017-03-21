@@ -55,7 +55,7 @@ class SyncDatabase():
 
     def process_flow(self, tag_time):
         # data太长，需要分割
-        query_sql = """select * from spiderdb where collect_time > \'{tag_time}\' """.format(tag_time=tag_time)
+        query_sql = """select * from spiderdb where collect_time > \'{tag_time}\' ORDER BY collect_time DESC""".format(tag_time=tag_time)
         query_data = self.query(query_sql, self.conn_outline)
 
         # 对data进行分组
