@@ -5,7 +5,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 
 from sync.sync_script import SyncDatabase
 
-INTERNAL = timedelta(hours=1)
+INTERNAL = timedelta(days=1)
 
 
 def now():
@@ -14,6 +14,7 @@ def now():
 
 if __name__ == '__main__':
     sync = SyncDatabase()
+
 
     def main():
         print('任务重启', now())
