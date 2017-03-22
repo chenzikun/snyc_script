@@ -8,8 +8,7 @@ from sync.config import MYSQL_CONFIG_ONLINE
 from sync.config import MYSQL_CONFIG_OUTLINE
 
 
-class SyncDatabase():
-
+class SyncDatabase(object):
     def __init__(self, data_division_num=10):
 
         self.conn_outline = self.create_conn(setting=MYSQL_CONFIG_OUTLINE)
@@ -37,7 +36,8 @@ class SyncDatabase():
         conn = pymysql.Connect(**setting)
         return conn
 
-    def query(self, sql, conn):
+    @staticmethod
+    def query(sql, conn):
         with conn.cursor() as cursor:
             cursor.execute(sql)
             result = cursor.fetchall()
@@ -55,7 +55,8 @@ class SyncDatabase():
 
     def process_flow(self, tag_time):
         # data太长，需要分割
-        query_sql = """select * from spiderdb where collect_time > \'{tag_time}\' ORDER BY collect_time DESC""".format(tag_time=tag_time)
+        query_sql = """select * from spiderdb where collect_time > \'{tag_time}\' ORDER BY collect_time DESC""".format(
+            tag_time=tag_time)
         query_data = self.query(query_sql, self.conn_outline)
 
         # 对data进行分组
@@ -91,7 +92,7 @@ class SyncDatabase():
                 sub_data_target.append(item_value)
             data_target.append(','.join(sub_data_target))
 
-        if data_target == []:
+        if not data_target:
             return None
 
         values = '), ('.join(data_target)
@@ -103,5 +104,6 @@ class SyncDatabase():
                       """.format(values=values)
         return insert_sql
 
-    def format_str(self, str):
-        return "\'" + str + "\'"
+    @staticmethod
+    def format_str(str_):
+        return "\'" + str_ + "\'"
